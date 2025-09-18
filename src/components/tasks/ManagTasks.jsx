@@ -10,64 +10,111 @@ import tasksReducer from "./tasks.reducer";
 const ManagTasks = () => {
   const [inputValue, setInputValue] = useState("");
 
+  // function tasksReducer(state, action) {
+  //   switch (action.type) {
+  //     case "setTasks": {
+  //       return {
+  //         ...state,
+  //         tasks: action.payload.tasks,
+  //         count: action.payload.count,
+  //         loading: false,
+  //       };
+  //     }
+  //     case "loading": {
+  //       return {
+  //         ...state,
+  //         loading: true,
+  //         error: null,
+  //       };
+  //     }
+
+  //     case "error": {
+  //       return {
+  //         ...state,
+  //         error: action.payload,
+  //         loading: false,
+  //       };
+  //     }
+
+  //     case "create": {
+  //       return {
+  //         ...state,
+  //         tasks: [...state.tasks, action.payload],
+  //         count: state.count + 1,
+  //         loading: false,
+  //       };
+  //     }
+
+  //     case "delete": {
+  //       return {
+  //         ...state,
+  //         tasks: state.tasks.filter((tasks) => tasks !== action.payload),
+  //         count: state.count - 1,
+  //         loading: false,
+  //       };
+  //     }
+
+  //     default:
+  //       return state;
+  //   }
+  // }
+
+  //State Gerer grace à useReducer
+  //Mettre en consequence toute L'app //Use tasksState props
   const [tasksState, dispatch] = useReducer(tasksReducer, {
-    tasks: "",
+    tasks: [],
     count: 0,
     loading: false,
     error: null,
   });
 
-  // Définition des fonctions directement dans le composant
+  useEffect(() => {
+    dispatch({ type: "loading" });
+    getTasks()
+      .then((data) => {
+        dispatch({
+          type: "setTasks",
+          payload: {
+            tasks: data.tasks,
+            count: data.count,
+          },
+        });
+      })
+      .catch((error) => {
+        console.error(error);
+        dispatch({ type: "error ", payload: error.message });
+      });
+  }, []);
+
+  //Définition des fonctions directement dans le composant
   const handleCreateTask = () => {
-    setIsLoading(true);
-    setError(null);
+    dispatch({ type: "loading" });
+
     createTask({ title: inputValue })
       .then((createdTask) => {
-        setTasks([...tasks, createdTask]);
-        setTaskCount(tasksCount + 1);
+        // setTasks([...tasks, createdTask]);
+        // setTaskCount(tasksCount + 1);
+        dispatch({ type: "create", payload: createdTask });
         setInputValue("");
       })
       .catch((error) => {
         console.error(error);
-        setError(error.message);
-      })
-      .finally(() => {
-        setIsLoading(false);
+        dispatch({ type: "error", payload: error.message });
       });
   };
 
   const handleDeleteTask = (taskId) => {
-    setIsLoading(true);
-    setError(null);
+    dispatch({ type: "loading" });
     deleteTask(taskId)
       .then(() => {
-        setTasks(tasks.filter((task) => task.id !== taskId));
-        setTaskCount(tasksCount - 1);
+        // setTasks(tasks.filter((task) => task.id !== taskId));
+        // setTaskCount(tasksCount - 1);
+        dispatch({ type: "delete", payload: taskId });
       })
       .catch((error) => {
-        console.error(error);
-        setError(error.message);
-      })
-      .finally(() => {
-        setIsLoading(false);
+        dispatch({ type: "error", payload: error.message });
       });
   };
-
-  useEffect(() => {
-    setIsLoading(true);
-    getTasks()
-      .then((data) => {
-        setTasks(data.tasks);
-        setTaskCount(data.count);
-      })
-      .catch((error) => {
-        console.error(error);
-        setError(error.message);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, []);
 
   const handleChangeInputValue = (e) => setInputValue(e.currentTarget.value);
 
@@ -101,19 +148,19 @@ const ManagTasks = () => {
         }}
       >
         {/* Le reste de la liste n'est pas visible */}
-
         {tasksState.tasks.map((task) => (
           <li
             style={{
               display: "flex",
-              gap: 8,
+              justifyContent: "space-between", // espace entre texte et bouton
+              alignItems: "center",
               border: "1px solid #CFCFCF",
               padding: 8,
             }}
             key={task.id}
           >
-            <p style={{ margin: 0 }}>{task.title}</p>
-            {/* ... (le reste du code de la balise <li> n'est pas visible) */}
+            <span>{task.title}</span>
+            <button onClick={() => handleDeleteTask(task.id)}>Delete</button>
           </li>
         ))}
       </ul>
